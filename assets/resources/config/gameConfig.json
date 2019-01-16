@@ -1,0 +1,48 @@
+{
+    "matType" : [
+        "unMove",
+        "cookie",
+        "monster"
+    ],
+
+    "cookieNum" : [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9"
+    ],
+    "monsterTypeOfNum" :[
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6"
+    ],
+
+    "materialListOrder" : [
+        "floor_no",
+        "cookie_1",
+        "cookie_2",
+        "cookie_3",
+        "cookie_4",
+        "cookie_5",
+        "cookie_6",
+        "cookie_7",
+        "cookie_8",
+        "cookie_9",
+        "monster_1",
+        "monster_2",
+        "monster_3",
+        "monster_4",
+        "monster_5",
+        "monster_6"
+    ],
+
+    "materialTypeTonum" : []
+}
