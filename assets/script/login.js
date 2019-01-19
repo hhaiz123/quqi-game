@@ -14,7 +14,7 @@ cc.Class({
         num : 0
     },
 
-    // onLoad () {},
+    onLoad () {},
 
     start () {
         this.schedule(function() {

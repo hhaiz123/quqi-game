@@ -1,0 +1,30 @@
+{
+  "ver": "2.0.0",
+  "uuid": "77cad389-12ca-40c5-8bf8-0c28d49532cd",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "icon-qianwangpingfen": {
+      "ver": "1.0.3",
+      "uuid": "7c7454e1-c81b-41df-8048-4c03bd95b2f0",
+      "rawTextureUuid": "77cad389-12ca-40c5-8bf8-0c28d49532cd",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 1.5,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 292,
+      "height": 113,
+      "rawWidth": 292,
+      "rawHeight": 116,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}

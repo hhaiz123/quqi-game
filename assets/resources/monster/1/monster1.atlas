@@ -1,0 +1,111 @@
+
+monster1.png
+size: 128,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+3
+  rotate: false
+  xy: 1, 70
+  size: 68, 67
+  orig: 68, 67
+  offset: 0, 0
+  index: -1
+1
+  rotate: false
+  xy: 1, 139
+  size: 69, 66
+  orig: 69, 66
+  offset: 0, 0
+  index: -1
+shenti2
+  rotate: false
+  xy: 1, 1
+  size: 69, 67
+  orig: 69, 67
+  offset: 0, 0
+  index: -1
+闭眼
+  rotate: false
+  xy: 72, 1
+  size: 23, 20
+  orig: 23, 20
+  offset: 0, 0
+  index: -1
+2
+  rotate: false
+  xy: 71, 96
+  size: 23, 20
+  orig: 23, 20
+  offset: 0, 0
+  index: -1
+大眼
+  rotate: false
+  xy: 96, 96
+  size: 23, 20
+  orig: 23, 20
+  offset: 0, 0
+  index: -1
+高兴2
+  rotate: false
+  xy: 47, 254
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
+大嘴巴
+  rotate: false
+  xy: 62, 207
+  size: 48, 29
+  orig: 48, 29
+  offset: 0, 0
+  index: -1
+小嘴吧
+  rotate: false
+  xy: 1, 246
+  size: 40, 7
+  orig: 40, 7
+  offset: 0, 0
+  index: -1
+高兴1
+  rotate: false
+  xy: 71, 70
+  size: 40, 24
+  orig: 40, 24
+  offset: 0, 0
+  index: -1
+二嘴巴
+  rotate: false
+  xy: 62, 238
+  size: 41, 15
+  orig: 41, 15
+  offset: 0, 0
+  index: -1
+大大嘴巴
+  rotate: false
+  xy: 1, 207
+  size: 59, 37
+  orig: 59, 37
+  offset: 0, 0
+  index: -1
+图层 2
+  rotate: false
+  xy: 43, 246
+  size: 4, 3
+  orig: 4, 3
+  offset: 0, 0
+  index: -1
+图层 4
+  rotate: false
+  xy: 43, 251
+  size: 2, 2
+  orig: 2, 2
+  offset: 0, 0
+  index: -1
+图层 5
+  rotate: false
+  xy: 47, 251
+  size: 3, 1
+  orig: 3, 1
+  offset: 0, 0
+  index: -1

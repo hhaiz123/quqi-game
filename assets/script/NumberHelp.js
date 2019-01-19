@@ -23,7 +23,7 @@ cc.Class({
     },
 
      onLoad () {
-        let level = window.Global.selectLevel;
+        let level = vv.selectLevel;
         this.n1 = Math.floor(level / 1000);
         this.n2 = Math.floor((level - this.n1 * 1000) / 100);
         this.n3 = Math.floor((level - this.n1 * 1000 - this.n2 * 100) / 10);

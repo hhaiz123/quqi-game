@@ -1,0 +1,56 @@
+{
+  "ver": "1.2.4",
+  "uuid": "c2741d2d-b691-4b7b-8af8-a64aabd7328d",
+  "rawTextureUuid": "62d967c0-70fc-4c98-9af5-86b248164fac",
+  "size": {
+    "width": 752,
+    "height": 1644
+  },
+  "type": "Texture Packer",
+  "subMetas": {
+    "logo.png": {
+      "ver": "1.0.3",
+      "uuid": "92ea7517-4424-49ae-abc0-3d9bc3feb000",
+      "rawTextureUuid": "62d967c0-70fc-4c98-9af5-86b248164fac",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": -1,
+      "trimX": 1,
+      "trimY": 1337,
+      "width": 576,
+      "height": 306,
+      "rawWidth": 590,
+      "rawHeight": 318,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "spriteType": "normal",
+      "subMetas": {}
+    },
+    "zhujiemian_di.jpg": {
+      "ver": "1.0.3",
+      "uuid": "f972e1cd-4a69-4cb5-8bab-46a0bbac2afc",
+      "rawTextureUuid": "62d967c0-70fc-4c98-9af5-86b248164fac",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0,
+      "trimX": 1,
+      "trimY": 1,
+      "width": 750,
+      "height": 1334,
+      "rawWidth": 750,
+      "rawHeight": 1334,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "spriteType": "normal",
+      "subMetas": {}
+    }
+  }
+}
