@@ -1,0 +1,37 @@
+{
+  "__type__": "cc.AnimationClip",
+  "_name": "cookieChip",
+  "_objFlags": 0,
+  "_native": "",
+  "_duration": 0.05,
+  "sample": 60,
+  "speed": 0.1,
+  "wrapMode": 1,
+  "curveData": {
+    "comps": {
+      "cc.Sprite": {
+        "spriteFrame": [
+          {
+            "frame": 0,
+            "value": {
+              "__uuid__": "23dc7189-99e2-4e83-b06b-fa8f6fb86df7"
+            }
+          },
+          {
+            "frame": 0.016666666666666666,
+            "value": {
+              "__uuid__": "4f9043c2-a8f0-40f5-aa0a-9b3235e7a5fa"
+            }
+          },
+          {
+            "frame": 0.03333333333333333,
+            "value": {
+              "__uuid__": "b3e4dd4a-6623-41f3-9921-c6c3c4714904"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "events": []
+}
