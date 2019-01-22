@@ -1,4 +1,3 @@
-
 cc.Class({
     extends: cc.Component,
 
@@ -14,60 +13,47 @@ cc.Class({
         backGround : {
             default : null,
             type : cc.Node
-        }
-
+        },
+        layerDistance : 5
     },
 
-    onLoad () {},
+    initData() {
+        this.roadCookieCount = 0;
+        this.allCookieCount = 0;
+        this.mark = [];
+        this.roadArr = [];
+        this.roadLine = -1;
+        this.preRoadArr = [];
 
-    addAudio () {
-        cc.loader.loadRes("prefab/audio",cc.Prefab,function(err,audio){
-            if(!err) {
-                this.audio = cc.instantiate(audio);
-                this.node.addChild(this.audio);
-                
+        let count = vv.matTypeOfNum.length;
+        for(let i=0; i<count; i++)  {
+            let typeId = vv.matTypeOfNum[i];
+            this.mark.push([]);
+            if(typeId >= 1 && typeId <  10) {
+                this.allCookieCount++;
+                this.mark[i].push(-1);
             }
-        }.bind(this));
-    },
 
-    initData () {
-        this.selectMat = [];
-        this.gamePlay = false;
-        this.selectCount = 0;
-        this.monCount = 0;
-        this.preNode = null;
-
-        this.matCount = 0;
-        for(let i=0; i< vv.matTypeOfNum.length; i++) {
-            if(vv.matTypeOfNum[i] >= 1) {
-                this.matCount++;
-            }
-            if(vv.matTypeOfNum[i] >= 10) {
-                this.selectMat[this.monCount] = [];
-                this.selectMat[this.monCount].push(vv.material[i]);
-                this.monCount++;
+            if(typeId >= 10) {
+                let monster = vv.material[i];
+                let monJs = this.getNodeJs(monster);
+                vv.monsterColor[typeId] = monJs.getFloorCol();
+                this.roadArr[typeId] = [];
+                this.roadArr[typeId].push(i)
+                this.mark[i].push(typeId);
             }
         }
 
-        
-    },
-
-    getPreColor () {
-        let length = this.selectMat.length;
-        if(length === 0 ) return;
-        let preN = this.selectMat[length-1];
-        let name = preN.name; 
-
-        if(name === "monster") {
-            let monsterJs = preN.getComponent(vv.monsterJs);
-            return monsterJs.getFloorCol();
-        }else {
-            let cookieJs = preN.getComponent(vv.cookieJs);
-            return cookieJs.getFloorCol();
-        }
+        this.schedule(function(){
+            if(this.allCookieCount === this.roadCookieCount) {
+                this.resultWnd.active = true;
+                this.backGround.active = true;
+            }
+        },1);
     },
 
     getNodeJs (node) {
+        if(!node) return null;
         let nodeJs;
         let name = node.name;
         if(name === "monster") {
@@ -82,9 +68,8 @@ cc.Class({
 
     getClickIdx(event) {
         let mapContentSize = this.mapView.getContentSize();
-        let mapWidth = mapContentSize.width;
-        let mapHeight = mapContentSize.height;
-        let winSize = cc.director.getWinSize();
+        let mapWidth = mapContentSize.width - 2 * this.layerDistance;
+        let mapHeight = mapContentSize.height - 2 * this.layerDistance;
 
         let touchPos = event.touch.getLocation();
        // let p = touch.getLocation();
@@ -106,96 +91,269 @@ cc.Class({
         }
         return num;
     },
-    
-    //恢复sIdx 之后的所有cookie状态
-    resumeAfterCookie(sIdx) {
-        if(sIdx === -1) return;
-        let nodeJs;
-        for(let i = sIdx + 1; i < this.selectMat.length;) {
-            nodeJs = this.getNodeJs(this.selectMat[i]);
-            nodeJs.unUpdateFloor();
-            nodeJs.isClick = false;
-            this.selectMat.splice(i,1);
-            this.selectCount--;
+
+    //点击时。
+    resumebegState (monType,nodeId) {
+        let length = this.roadArr[monType].length
+        let beginIdx = this.roadArr[monType].indexOf(nodeId);
+        if(beginIdx === -1) {
+            cc.log("no find node in roadArr!");
+            return;
         }
+        for(let i=length-1; i>beginIdx;i--) {
+            let nodeId = this.roadArr[monType].pop();
+            this.roadCookieCount--;
+            if(nodeId === -1) return;
+            let node = vv.material[nodeId];
+            let nodeJs = this.getNodeJs(node);
+            if(!nodeJs) return;
+            nodeJs.resumeFloorOfWhite();
+            this.mark[nodeId].length = 0;
+            this.mark[nodeId].push(-1);
+        }
+    },
+
+    //移动中同条线（删除原线中该节点之后的 所有节点。）
+    updateRoadCooState (monType,nodeId) {
+        let beginIdx = this.roadArr[monType].indexOf(nodeId);
+        if(beginIdx === -1) return;
+        let length = this.roadArr[monType].length
+
+        if(!this.preRoadArr[nodeId]){
+            this.preRoadArr[nodeId] = [];
+        } else {
+            this.preRoadArr[nodeId].length = 0;
+        }
+        this.preRoadArr[nodeId].push(monType);
+        this.preRoadArr[nodeId].push(nodeId);
+
+        for(let i = beginIdx + 1; i<length;) {
+            length--;
+            let reNodeId = this.roadArr[monType][i];
+            let reNode = vv.material[reNodeId];
+            let reNodeJs = this.getNodeJs(reNode);
+            this.preRoadArr[nodeId].push(reNodeId);
+            let hasNotPreRoad = !this.preRoadArr[reNodeId] || !this.preRoadArr[reNodeId].length
+            let preRoadId;
+            if(!hasNotPreRoad) {
+                preRoadId = this.preRoadArr[reNodeId][0];
+            }
+            if(hasNotPreRoad || preRoadId === monType) {
+                this.mark[reNodeId].pop();
+                reNodeJs.resumeFloorOfWhite();
+                this.roadArr[monType].splice(i,1);
+                this.roadCookieCount--;
+                continue;
+            }
+            this.resumePreState(reNodeId);
+        }
+    },
+
+    //恢复同一条线上的：
+    resumeRoadCooState (monTypeId,nodeId) {
+        if(!this.preRoadArr[nodeId] || !this.preRoadArr[nodeId].length) return;
+
+        let roadId = this.preRoadArr[nodeId][0];
+        for(let i=2; i<this.preRoadArr[nodeId].length;) {
+            let reNodeId = this.preRoadArr[nodeId][i];
+            let reNode = vv.material[reNodeId];
+            let reNodeJs = this.getNodeJs(reNode);
+
+            if(reNodeJs.isClick) {
+                this.keepPreRoad(nodeId);
+
+            }
+            this.mark[reNodeId].push(monTypeId);
+            reNodeJs.updateFloorWithMon(monTypeId);
+            this.roadArr[monTypeId].push(reNodeId);
+            this.roadCookieCount++;
+            this.preRoadArr[nodeId].splice(i,1);
+        }
+            
+    },
+
+    //保存节点下原来的路线。
+    keepPreRoad(nodeId) {
+        if(!this.preRoadArr[nodeId]){
+            this.preRoadArr[nodeId] = [];
+        } else {
+            this.preRoadArr[nodeId].length = 0;
+        }
+
+        let length = this.mark[nodeId].length;
+        if(length === 1) return;
+        let preMonId = this.mark[nodeId][length - 1];
+        this.preRoadArr[nodeId].push(preMonId);
+
+        let nodePreRoadIdx = this.roadArr[preMonId].indexOf(nodeId);
+        for(let i=nodePreRoadIdx; i<this.roadArr[preMonId].length;) {
+            let dnodeId = this.roadArr[preMonId][i];
+            let node = vv.material[dnodeId]
+            let nodeJs = this.getNodeJs(node);
+            nodeJs.resumeFloorOfWhite();
+            this.roadArr[preMonId].splice(i,1);
+            this.roadCookieCount--;
+            this.preRoadArr[nodeId].push(dnodeId);
+            this.mark[dnodeId].pop();
+
+            if(i === nodePreRoadIdx) continue; 
+            this.mark[dnodeId].push(-1);
+
+        }
+    },
+
+
+    //恢复已经被点击的单格：
+    resumePreState(nodeId) {
+        //如果这个节点没有需要一起恢复的路线时：
+        if(!this.preRoadArr[nodeId] || !this.preRoadArr[nodeId].length) {
+            let reNode = vv.material[nodeId];
+            let reNodeJs = this.getNodeJs(reNode);
+            reNodeJs.resumeFloorOfWhite();
+            let roadId = this.mark[nodeId].pop();
+            let idx = this.roadArr[roadId].indexOf(nodeId);
+            this.roadArr[roadId].splice(idx,1);
+            this.roadCookieCount--;
+            return;
+        }     
+
+        //恢复该节点，有需要一同恢复的路线时：
+        let leng = this.preRoadArr[nodeId].length;
+        let reRoadId = this.preRoadArr[nodeId][0];
+        for(let i=1; i<leng; i++) {
+            let reNodeId = this.preRoadArr[nodeId][i];
+            let curRoadId = this.mark[reNodeId].pop();
+
+            if(i === 1) {
+                this.roadArr[curRoadId].pop();
+                this.roadCookieCount--;
+            }
+            let reNode = vv.material[reNodeId];
+            let reNodeJs = this.getNodeJs(reNode);
+            reNodeJs.updateFloorWithMon(reRoadId);
+            this.mark[reNodeId].push(reRoadId);
+            this.roadArr[reRoadId].push(reNodeId);
+            this.roadCookieCount++;
+        }
+        this.preRoadArr[nodeId].length = 0;
+    },
+
+    //一格一格的处理(当该节点被点击时，没有被点击时是否为回退？)
+    updateCookieState(monTypeId,nodeId) {
+        if(nodeId >= 10) return;
+        let curNode = vv.material[nodeId];
+        let curNodeJs = this.getNodeJs(curNode);
+        if(!curNodeJs) return;
+
+        this.keepPreRoad(nodeId);
+                
+        //当前node的处理
+        curNodeJs.updateFloorWithMon(monTypeId);
+        this.mark[nodeId].push(monTypeId);
+        this.roadArr[monTypeId].push(nodeId);
+        this.roadCookieCount++;
+
+    },
+
+    onLoad () {},
+
+    addAudio () {
+        cc.loader.loadRes("prefab/audio",cc.Prefab,function(err,audio){
+            if(!err) {
+                this.audio = cc.instantiate(audio);
+                this.node.addChild(this.audio);
+                
+            }
+        }.bind(this));
     },
 
     touchStarCall(event) {
-        let idx = this.getClickIdx(event);
-        if(idx === -1) return;
-        //如果被点中的是monster,播放声音
-        let matType = vv.matTypeOfNum[idx];
-        let nodeJs = this.getNodeJs(vv.material[idx]);
-        if(matType == 0) return;
-        if(matType >= 10) {
-           this.audio.getComponent(vv.audioHelpJs).playMonster();
-            if( !nodeJs.isClick) {
-                this.selectMat.push(vv.material[idx])
-                this.selectCount++;
-                nodeJs.isClick = true;
-                this.gamePlay = true;
-                return;
-            }
-            //点击到cookie未点中状态时
-        } else if(!nodeJs.isClick) return;
+        let nodeIdx = this.getClickIdx(event);
+        if(nodeIdx === -1) return;
+        let typeId = vv.matTypeOfNum[nodeIdx];
+        if(typeId === 0) return;  //点击nomove floor时，直接返回。
+        let curNode = vv.material[nodeIdx];
+        let curNodeJs = this.getNodeJs(curNode);
+        if(typeId >= 10 || curNodeJs.isClick) {
+            let length = this.mark[nodeIdx].length;
+            let roadId = this.mark[nodeIdx][length - 1];
+            this.resumebegState(roadId,nodeIdx);
 
-        //点击的是已经被击中的情况：
-        let sIdx = this.selectMat.indexOf(vv.material[idx]);
-        this.resumeAfterCookie(sIdx);
-
-        this.gamePlay = true;
+            this.roadLine = roadId;
+            return;
+        }
     },
 
     touchMoveCall(event) {
-        if(!this.gamePlay) return;
-        let curIdx = this.getClickIdx(event);
-        if(curIdx === -1) return;
-       // curIdx = 1;
-        let curNode = vv.material[curIdx];
+        //如果路线没有启动，返回
+        if(this.roadLine === -1) return;
+        let curNodeId = this.getClickIdx(event);
+        if(curNodeId === -1) return;
+        let typeId = vv.matTypeOfNum[curNodeId];
+        if(typeId === 0) return;  //点击nomove floor时，直接返回。
+
+        let curNode = vv.material[curNodeId];
+        let length = this.mark[curNodeId].length;
+        let curNodeRoadId = this.mark[curNodeId][length - 1];
+
+        let roadArrLength = this.roadArr[this.roadLine].length;
+        let preId = this.roadArr[this.roadLine][roadArrLength - 1];
+        if(preId === curNodeId) return;
+
+       //同一条线上的删除操作。
+        if(this.roadLine === curNodeRoadId) {
+            this.updateRoadCooState(curNodeRoadId,curNodeId);
+            return;
+        }
+
+        if(typeId >= 10) return;
+
+        let preRow = Math.ceil((preId + 1) / vv.column);
+        let preColumn = ((preId + 1) % vv.column) ? (preId + 1) % vv.column : vv.column;
+        let curRow = Math.ceil((curNodeId + 1) / vv.column);
+        let curColumn = ((curNodeId + 1) % vv.column) ? (curNodeId + 1) % vv.column : vv.column;
+
+        //同一条线上的恢复判断。
         let curNodeJs = this.getNodeJs(curNode);
-        if(curNodeJs === null) return;   //不可移动瓷砖时 return
-        //cookie 已经为点击状态时,后面的选中饼干恢复。
-        if(curNodeJs.isClick) {
-            let sIdx = this.selectMat.indexOf(curNode);
-            this.resumeAfterCookie(sIdx);
-
+        let rlength = this.roadArr[this.roadLine].length;
+        let curRoadLastCookieId = this.roadArr[this.roadLine][rlength - 1];
+        let hasPreRoad = this.preRoadArr[curRoadLastCookieId] && this.preRoadArr[curRoadLastCookieId].length;
+        if(!curNodeJs.isClick && hasPreRoad) {
+            let plength = this.preRoadArr[curRoadLastCookieId].length;
+            let preRoadId = this.preRoadArr[curRoadLastCookieId][0];
+            let preRoadLastCookieId = this.preRoadArr[curRoadLastCookieId][plength - 1];
+            if(preRoadId === this.roadLine && preRoadLastCookieId === curNodeId) {
+                this.resumeRoadCooState(preRoadId,curRoadLastCookieId);
+                return;
+            }
         }
-        let selectLength = this.selectMat.length;
-        let preNode = this.selectMat[selectLength-1];
-        let preNodeJs = this.getNodeJs(preNode);
-        let preNodePosX = preNodeJs.posX;
-        let preNodePosY = preNodeJs.posY;
-        let preNodeType = preNodeJs.value;
+cc.log(curRow,curColumn);
+        if(preRow != curRow && preColumn != curColumn) return;
+        if(preRow === curRow && Math.abs(preColumn - curColumn) > 1) return;
+        if(preColumn === curColumn && Math.abs(preRow - curRow) > 1) return;
+        this.updateCookieState(this.roadLine,curNodeId);
 
-        let curNodePosX = curNodeJs.posX;
-        let curNodePosY = curNodeJs.posY;
-        let curNodeType = curNodeJs.value;
 
-        //下一个Node是否为 上右下左 方向
-        if(preNodePosY + 1 === curNodePosY && preNodePosX === curNodePosX) {}
-        else if(preNodePosY === curNodePosY && preNodePosX + 1 === curNodePosX) {}
-        else if(preNodePosY -1 === curNodePosY && preNodePosX === curNodePosX) {}
-        else if(preNodePosY === curNodePosY && preNodePosX - 1 === curNodePosX) {}
-        else return;
-
-        if(preNodeType >= 10 || preNodeType <= curNodeType) {
-            let preCol = this.getPreColor();
-            curNodeJs.updateFloor(preCol)
-            this.selectMat.push(curNode);
-            this.selectCount++;
-            curNodeJs.isClick = true;
-        }
-        if(this.selectCount == this.matCount) {
-            this.scheduleOnce(function(){
-                this.resultWnd.active = true;
-                this.backGround.active = true;
-            },0.6);
-
+    },
+    touchEndCall(event) {
+        this.roadLine = -1;
+        this.preRoadArr.length = 0;
+        let length = this.mark.length;
+        for(let i=0; i<length; i++) {
+            let mLength = this.mark[i].length;
+            if(mLength > 1) {
+                let tempMon = this.mark[i][mLength-1];
+                this.mark[i].length = 1;
+                this.mark[i].push(tempMon);
+            }
         }
     },
 
-    touchEndCall(event) {
-        this.gamePlay = false;
+    initEventHandlers() {
+        this.node.on("drawmap_over",this.initData,this);
+        this.mapView.on("touchstart",this.touchStarCall ,this)
+        this.mapView.on("touchmove",this.touchMoveCall ,this)
+        this.mapView.on("touchend",this.touchEndCall ,this)
     },
 
     nextButtonCallback() {
@@ -203,18 +361,13 @@ cc.Class({
         cc.director.loadScene("game");
     },
 
-    initEventHandlers () {
-        this.node.on("drawmap_over",this.initData,this);
-        this.mapView.on("touchstart",this.touchStarCall ,this)
-        this.mapView.on("touchmove",this.touchMoveCall ,this)
-        this.mapView.on("touchend",this.touchEndCall ,this)
-    },
-
+   
     start () {
-        this.addAudio();
         this.resultWnd.active = false;
         this.backGround.active = false;
         this.initEventHandlers();
+
+        
     },
 
      update (dt) {

@@ -56,7 +56,7 @@ cc.Class({
         let mon = cc.instantiate(this.monster);
         let monsterJS = mon.getComponent("MonsterHelp");
         monsterJS.updateMonster(index);
-        monsterJS.setPos(posx,posy);
+        //monsterJS.setPos(posx,posy);
         return mon;
     },
 
@@ -64,7 +64,7 @@ cc.Class({
         let cookie = cc.instantiate(this.cookie);
         let cookieJS = cookie.getComponent("cookieHelp");
         cookieJS.updateNum(index);
-        cookieJS.setPos(posx,posy);
+        //cookieJS.setPos(posx,posy);
         return cookie;
     },
 

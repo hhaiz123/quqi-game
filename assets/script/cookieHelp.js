@@ -24,32 +24,27 @@ cc.Class({
         this.value = this.value || 0;
         this.cookieChip.active = false;
         this.isClick = false;
-        this.monsterValue = -1;
      },
 
-     eatState : function() {
-        this.cookieChip.active = true;
-        let chipAnimation = this.cookieChip.getComponent(cc.Animation);
-        chipAnimation.play("cookieChip");
-        this.cookie.active = false;
-     },
-
-     updateFloor : function(color) {
-        this.floor.color = color;
-     },
-
-     unUpdateFloor : function() {
-         this.floor.color = cc.Color.WHITE
-     },
-
-     getFloorCol () {
-        return this.floor.color;
-     },
-
-     setPos : function(x,y) {
-        this.posX =x;
-        this.posY = y;
+    resumeFloorOfWhite () {
+        this.floor.color = cc.Color.WHITE;
+        this.isClick = false;
     },
+
+    updateFloorWithMon : function(typeId) {
+        let color = vv.monsterColor[typeId];
+        this.floor.color = color;
+        this.isClick = true;
+     },
+
+    //  getFloorCol () {
+    //     return this.floor.color;
+    //  },
+
+    //  setPos : function(x,y) {
+    //     this.posX =x;
+    //     this.posY = y;
+    // },
     
     updateNum : function(index) {
         this.value = index;

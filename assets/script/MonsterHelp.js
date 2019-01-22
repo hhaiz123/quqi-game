@@ -18,14 +18,15 @@ cc.Class({
         this.isClick = false;
      },
 
-    setPos : function(x,y) {
-        this.posX =x;
-        this.posY = y;
+    initGameData() {
+        this.monsterValue = this.value;
+        this.isClick = true;
     },
 
     updateMonster : function(index) {
         this.setFloorCol(index);
         this.value = index;
+
         let num = index - 9;
         this.cnfPath = "monster/" + num +"/monster" + num
         cc.loader.loadRes(this.cnfPath,sp.SkeletonData,function(err,data) {

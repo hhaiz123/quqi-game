@@ -15,6 +15,7 @@ cc.Class({
         vv.selectLevel = -1;
         vv.matTypeOfNum = [];
         vv.material = [];
+        vv.monsterColor = [];
         vv.begin = false;
         vv.cellWidth = 120;
         vv.cellHeight = 120;
