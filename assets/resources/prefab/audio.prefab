@@ -84,7 +84,18 @@
         "__uuid__": "0c2e03bb-d6db-4db3-86be-2aefabee6251"
       }
     ],
-    "monsterVolumn": 0.1
+    "backMusic": {
+      "__uuid__": "a1b33cf0-2190-44ad-8a78-25c55f24345d"
+    },
+    "eatMusic": {
+      "__uuid__": "e433c152-ce48-41cc-a198-797030f00659"
+    },
+    "successMusic": {
+      "__uuid__": "bb6c87c1-79d2-47e2-9c9d-58b8705017b2"
+    },
+    "monsterVolumn": 0.1,
+    "backMusicVolumn": 0.1,
+    "eatMusicVolumn": 0.5
   },
   {
     "__type__": "cc.PrefabInfo",

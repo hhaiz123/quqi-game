@@ -29,6 +29,8 @@ cc.Class({
     initDate : function()  {
         this.comJson = this.commonJson.json;
         this.passJson = this.passJson || null;
+        vv.matTypeOfNum.length = 0;
+        vv.distance = this.distance;
         
         this.cnfPath = 'config/pass' + vv.selectLevel;
         cc.loader.loadRes(this.cnfPath,function (err, jsonAsset) {
@@ -79,33 +81,40 @@ cc.Class({
             material = this.getNoMoveFloor();
         } else if(index >= 10) {
             material = this.getMonster(index,posx,posy);
+
         } else
         {
             material = this.getCookie(index,posx,posy);
         }
-        this.mapView.addChild(material);
+        material.setPosition(posx,posy);
+        this.mapView.addChild(material,index);
         vv.material.push(material)
     },
 
-    setMapViewSize : function() {
-        let w = this.column * vv.cellWidth + this.distance * 2;
-        let h = this.row * vv.cellHeight + this.distance * 2;
+    setMapViewSize : function(w,h) {
         this.mapView.setContentSize(w,h)
     },
 
     draw : function() {
-        this.setMapViewSize();
+        let width = this.column * vv.cellWidth + this.distance * 2;
+        let height = this.row * vv.cellHeight + this.distance * 2;
+        this.setMapViewSize(width,height);
+
         //添加配置中的类型图片到 Layout 中。
         for(let i=0; i<this.count; i++) {
             let typeNum = vv.matTypeOfNum[i];
-            let posx = Math.floor(i / this.column) + 1;
-            let posy = i % this.column + 1;
-            this.getTotalNode(typeNum,posx,posy)
-        }
+            let nodeRow = Math.ceil((i + 1) / this.column);
+            let nodeColumn = ((i + 1) % this.column) ? (i + 1) % this.column : this.column;
+            let x = nodeColumn * vv.cellWidth - vv.cellWidth / 2;
+            let y = (this.row - nodeRow + 1) * vv.cellHeight - vv.cellHeight / 2;
 
-        let layout = this.mapView.getComponent(cc.Layout)
-        layout.cellSize = cc.size(vv.cellWidth, vv.cellHeight),
-        layout.updateLayout()
+            let minWidth = width / 2 - this.distance;
+            let minHeight = height / 2 - this.distance;
+
+            let posx = (x >= minWidth) ? (x - minWidth) : (x - minWidth);
+            let posy = (y >= minHeight) ? (y - minHeight) : (y - minHeight);
+            this.getTotalNode(typeNum,posx,posy);    
+        }
     },
 
     start () {

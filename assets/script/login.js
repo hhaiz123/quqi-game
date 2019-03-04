@@ -14,19 +14,29 @@ cc.Class({
         num : 0
     },
 
-    onLoad () {},
+    onLoad () {
+        this.time = 0;
+        this.login = true;
+    },
 
     start () {
         this.schedule(function() {
-cc.log(this.progressBar.progress)
-            this.progressBar.progress = (++this.num) / 100
-            this.text.string = "loding " + this.num + "%"
-            if(this.num === 100){
-                this.unschedule()
-                cc.director.loadScene("main")
-            }
+
         }.bind(this),0.01)
     },
 
-    //update (dt) {},
+    update (dt) {
+        this.time += dt;
+        if(this.time >= 0.01 && this.login) {
+            cc.log(this.progressBar.progress)
+            this.progressBar.progress = (++this.num) % 100
+            this.text.string = "loding " + this.num + "%"
+            if(this.num === 98){
+                cc.director.loadScene("main")
+                this.login = false;
+            }
+            this.time = 0;
+        }
+
+    },
 });

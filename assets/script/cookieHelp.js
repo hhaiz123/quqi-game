@@ -20,31 +20,56 @@ cc.Class({
         }
     },
 
-     onLoad () {
+    onLoad () {
         this.value = this.value || 0;
         this.cookieChip.active = false;
         this.isClick = false;
      },
 
+     showScale() {
+        let scale1 = cc.scaleTo(0.1,0.9);
+        let scale2 = cc.scaleTo(0.1,1);
+        this.floor.runAction(cc.sequence(scale1,scale2));
+     },
+
     resumeFloorOfWhite () {
+       // this.showScale();
         this.floor.color = cc.Color.WHITE;
         this.isClick = false;
     },
 
     updateFloorWithMon : function(typeId) {
+        this.showScale();
         let color = vv.monsterColor[typeId];
         this.floor.color = color;
         this.isClick = true;
      },
 
-    //  getFloorCol () {
-    //     return this.floor.color;
-    //  },
+     resetCookie : function() {
+        this.cookie.stopAllActions();
+        this.cookieChip.stopAllActions();
+        this.cookie.active = true;
+        this.cookie.opacity = 255;
+        this.cookieChip.active = false;
+     },
 
-    //  setPos : function(x,y) {
-    //     this.posX =x;
-    //     this.posY = y;
-    // },
+     eatCookieAnimation : function() {
+        let fade = cc.fadeOut(0.2);
+        let sequence = cc.sequence(fade,cc.callFunc(function() {
+            this.cookie.active = false;
+            this.cookieChip.active = true;
+            let chipAnimation = this.cookieChip.getComponent(cc.Animation);
+            chipAnimation.play("cookieChip");
+        }.bind(this)));
+
+        this.cookie.runAction(sequence);
+    },
+
+    getPos : function() {
+        let pos = this.cookie.getPosition();
+        return pos;
+    },
+    
     
     updateNum : function(index) {
         this.value = index;

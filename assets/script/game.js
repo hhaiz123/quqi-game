@@ -14,6 +14,14 @@ cc.Class({
             default : null,
             type : cc.Node
         },
+        hint:{
+            default: null,
+            type: cc.Button
+        },
+        reset:{
+            default:null,
+            type:cc.Button
+        },
         layerDistance : 5
     },
 
@@ -22,8 +30,13 @@ cc.Class({
         this.allCookieCount = 0;
         this.mark = [];
         this.roadArr = [];
+        this.roadNode = [];
         this.roadLine = -1;
         this.preRoadArr = [];
+        this.time = 0;
+        this.idx = 0;
+        this.isEat = false;
+        this.overCount = 0;
 
         let count = vv.matTypeOfNum.length;
         for(let i=0; i<count; i++)  {
@@ -39,22 +52,35 @@ cc.Class({
                 let monJs = this.getNodeJs(monster);
                 vv.monsterColor[typeId] = monJs.getFloorCol();
                 this.roadArr[typeId] = [];
+                this.roadNode.push(i);
                 this.roadArr[typeId].push(i)
                 this.mark[i].push(typeId);
             }
         }
-
-        this.schedule(function(){
-            if(this.allCookieCount === this.roadCookieCount) {
-                this.resultWnd.active = true;
-                this.backGround.active = true;
-            }
-        },1);
+        this.addAudio();
     },
 
-    getNodeJs (node) {
-        if(!node) return null;
+    addAudio () {
+        cc.loader.loadRes("prefab/audio",cc.Prefab,function(err,audio){
+            if(!err) {
+                this.audio = cc.instantiate(audio);
+                this.node.addChild(this.audio);
+                this.audioJs = this.audio.getComponent("AudioHelp");
+                this.audioJs.playBackMusic();
+            }
+        }.bind(this));
+    },
+
+    getNodeJs (nodeId) {
+        if(nodeId === undefined) return;
+        let node;
         let nodeJs;
+cc.log(typeof(nodeId));
+        if(typeof(nodeId) === 'number') {
+            node = vv.material[nodeId];
+        } else {
+            node = nodeId;
+        }
         let name = node.name;
         if(name === "monster") {
             nodeJs = node.getComponent(vv.monsterJs);
@@ -92,12 +118,70 @@ cc.Class({
         return num;
     },
 
+    addNodeToRoad(roadId,nodeId) {
+        let reNode = vv.material[nodeId];
+        let reNodeJs = this.getNodeJs(reNode);
+        if(!reNodeJs || reNodeJs === "monster") {
+            cc.log("error  addNodeToRoad ",nodeId, "is type error！");
+            return;
+        }
+        if(roadId === -1) {
+            reNodeJs.resumeFloorOfWhite();
+        } else {
+            reNodeJs.updateFloorWithMon(roadId);
+            this.mark[nodeId].push(roadId);
+            this.roadArr[roadId].push(nodeId);
+            this.roadCookieCount++;
+        }
+    },
+
+    deleteNodeFromRoad(nodeId) {
+        let length = this.mark[nodeId].length;
+        if(length <= 1) {
+            cc.log("error  deleteNodeFromRoad",nodeId, "mark[%d] length is",length,);
+        }
+        let roadId = this.mark[nodeId].pop();
+        let idx = this.roadArr[roadId].indexOf(nodeId);
+        this.roadArr[roadId].splice(idx,1);
+        this.roadCookieCount--;
+    },
+
+    //保存节点下原来的路线。
+    keepPreRoad(nodeId) {
+        cc.log("inter keepPreRoad ",nodeId);
+        if(!this.preRoadArr[nodeId]){
+            this.preRoadArr[nodeId] = [];
+        } else {
+            this.preRoadArr[nodeId].length = 0;
+        }
+
+        let length = this.mark[nodeId].length;
+        if(length === 1) {
+            cc.log("keepPreRoad ",nodeId," mark is only one -1");
+            return;
+        }
+        let preMonId = this.mark[nodeId][length - 1];
+        this.preRoadArr[nodeId].push(preMonId);
+
+        let nodePreRoadIdx = this.roadArr[preMonId].indexOf(nodeId);
+        for(let i=nodePreRoadIdx; i<this.roadArr[preMonId].length;) {
+            let dnodeId = this.roadArr[preMonId][i];
+            this.deleteNodeFromRoad(dnodeId);
+            this.addNodeToRoad(-1,dnodeId);
+
+            this.preRoadArr[nodeId].push(dnodeId);
+        }
+    },
+
     //点击时。
     resumebegState (monType,nodeId) {
         let length = this.roadArr[monType].length
         let beginIdx = this.roadArr[monType].indexOf(nodeId);
+        if(beginIdx == 0) {
+            this.audioJs.playMonster();
+        }
         if(beginIdx === -1) {
-            cc.log("no find node in roadArr!");
+            cc.log("resumebegState no find node in roadArr!");
             return;
         }
         for(let i=length-1; i>beginIdx;i--) {
@@ -114,106 +198,39 @@ cc.Class({
     },
 
     //移动中同条线（删除原线中该节点之后的 所有节点。）
-    updateRoadCooState (monType,nodeId) {
+    deleteRoadCooState (monType,preNodeId,nodeId) {
+        cc.log("inter deleteRoadCooState " ,preNodeId);
         let beginIdx = this.roadArr[monType].indexOf(nodeId);
-        if(beginIdx === -1) return;
-        let length = this.roadArr[monType].length
-
-        if(!this.preRoadArr[nodeId]){
-            this.preRoadArr[nodeId] = [];
-        } else {
-            this.preRoadArr[nodeId].length = 0;
+        if(beginIdx === -1) {
+            cc.log("updateRoadCooState not find")
+            return;
         }
-        this.preRoadArr[nodeId].push(monType);
-        this.preRoadArr[nodeId].push(nodeId);
 
+        if(!this.preRoadArr[preNodeId]){
+            this.preRoadArr[preNodeId] = [];
+        } else {
+            this.preRoadArr[preNodeId].length = 0;
+        }
+        this.preRoadArr[preNodeId].push(monType);
+        this.preRoadArr[preNodeId].push(nodeId);
+
+        let length = this.roadArr[monType].length;
         for(let i = beginIdx + 1; i<length;) {
-            length--;
+            length--;  
             let reNodeId = this.roadArr[monType][i];
-            let reNode = vv.material[reNodeId];
-            let reNodeJs = this.getNodeJs(reNode);
-            this.preRoadArr[nodeId].push(reNodeId);
-            let hasNotPreRoad = !this.preRoadArr[reNodeId] || !this.preRoadArr[reNodeId].length
-            let preRoadId;
-            if(!hasNotPreRoad) {
-                preRoadId = this.preRoadArr[reNodeId][0];
-            }
-            if(hasNotPreRoad || preRoadId === monType) {
-                this.mark[reNodeId].pop();
-                reNodeJs.resumeFloorOfWhite();
-                this.roadArr[monType].splice(i,1);
-                this.roadCookieCount--;
-                continue;
-            }
-            this.resumePreState(reNodeId);
+            this.deleteNodeFromRoad(reNodeId);
+            this.addNodeToRoad(-1,reNodeId);
+            this.preRoadArr[preNodeId].push(reNodeId);
         }
     },
 
-    //恢复同一条线上的：
-    resumeRoadCooState (monTypeId,nodeId) {
-        if(!this.preRoadArr[nodeId] || !this.preRoadArr[nodeId].length) return;
-
-        let roadId = this.preRoadArr[nodeId][0];
-        for(let i=2; i<this.preRoadArr[nodeId].length;) {
-            let reNodeId = this.preRoadArr[nodeId][i];
-            let reNode = vv.material[reNodeId];
-            let reNodeJs = this.getNodeJs(reNode);
-
-            if(reNodeJs.isClick) {
-                this.keepPreRoad(nodeId);
-
-            }
-            this.mark[reNodeId].push(monTypeId);
-            reNodeJs.updateFloorWithMon(monTypeId);
-            this.roadArr[monTypeId].push(reNodeId);
-            this.roadCookieCount++;
-            this.preRoadArr[nodeId].splice(i,1);
-        }
-            
-    },
-
-    //保存节点下原来的路线。
-    keepPreRoad(nodeId) {
-        if(!this.preRoadArr[nodeId]){
-            this.preRoadArr[nodeId] = [];
-        } else {
-            this.preRoadArr[nodeId].length = 0;
-        }
-
-        let length = this.mark[nodeId].length;
-        if(length === 1) return;
-        let preMonId = this.mark[nodeId][length - 1];
-        this.preRoadArr[nodeId].push(preMonId);
-
-        let nodePreRoadIdx = this.roadArr[preMonId].indexOf(nodeId);
-        for(let i=nodePreRoadIdx; i<this.roadArr[preMonId].length;) {
-            let dnodeId = this.roadArr[preMonId][i];
-            let node = vv.material[dnodeId]
-            let nodeJs = this.getNodeJs(node);
-            nodeJs.resumeFloorOfWhite();
-            this.roadArr[preMonId].splice(i,1);
-            this.roadCookieCount--;
-            this.preRoadArr[nodeId].push(dnodeId);
-            this.mark[dnodeId].pop();
-
-            if(i === nodePreRoadIdx) continue; 
-            this.mark[dnodeId].push(-1);
-
-        }
-    },
-
-
-    //恢复已经被点击的单格：
+    //恢复node 下的原路线：
     resumePreState(nodeId) {
+        cc.log("inter resumePreState ",nodeId);
         //如果这个节点没有需要一起恢复的路线时：
         if(!this.preRoadArr[nodeId] || !this.preRoadArr[nodeId].length) {
-            let reNode = vv.material[nodeId];
-            let reNodeJs = this.getNodeJs(reNode);
-            reNodeJs.resumeFloorOfWhite();
-            let roadId = this.mark[nodeId].pop();
-            let idx = this.roadArr[roadId].indexOf(nodeId);
-            this.roadArr[roadId].splice(idx,1);
-            this.roadCookieCount--;
+            this.deleteNodeFromRoad(nodeId);
+            this.addNodeToRoad(-1,nodeId);
             return;
         }     
 
@@ -222,49 +239,45 @@ cc.Class({
         let reRoadId = this.preRoadArr[nodeId][0];
         for(let i=1; i<leng; i++) {
             let reNodeId = this.preRoadArr[nodeId][i];
-            let curRoadId = this.mark[reNodeId].pop();
-
-            if(i === 1) {
-                this.roadArr[curRoadId].pop();
-                this.roadCookieCount--;
-            }
-            let reNode = vv.material[reNodeId];
-            let reNodeJs = this.getNodeJs(reNode);
-            reNodeJs.updateFloorWithMon(reRoadId);
-            this.mark[reNodeId].push(reRoadId);
-            this.roadArr[reRoadId].push(reNodeId);
-            this.roadCookieCount++;
+            let typeId = vv.matTypeOfNum[reNodeId];
+            if(typeId >= 10) continue;
+            let mlength = this.mark[reNodeId].length;
+            let curRoadId = this.mark[reNodeId][mlength - 1];
+            if(curRoadId != -1) {
+                this.deleteNodeFromRoad(reNodeId);
+                this.addNodeToRoad(reRoadId,reNodeId);
+                continue;
+            } 
+            this.addNodeToRoad(reRoadId,reNodeId);
         }
         this.preRoadArr[nodeId].length = 0;
     },
 
-    //一格一格的处理(当该节点被点击时，没有被点击时是否为回退？)
+    //一格一格的处理(正向添加)
     updateCookieState(monTypeId,nodeId) {
-        if(nodeId >= 10) return;
-        let curNode = vv.material[nodeId];
-        let curNodeJs = this.getNodeJs(curNode);
-        if(!curNodeJs) return;
+        cc.log("inter updateCookieState")
 
         this.keepPreRoad(nodeId);
-                
-        //当前node的处理
-        curNodeJs.updateFloorWithMon(monTypeId);
-        this.mark[nodeId].push(monTypeId);
-        this.roadArr[monTypeId].push(nodeId);
-        this.roadCookieCount++;
-
+        this.addNodeToRoad(monTypeId,nodeId);
     },
 
-    onLoad () {},
+    isNextOfNode(preNodeId,nodeId) {
+        let preRow = Math.ceil((preNodeId + 1) / vv.column);
+        let preColumn = ((preNodeId + 1) % vv.column) ? (preNodeId + 1) % vv.column : vv.column;
+        let curRow = Math.ceil((nodeId + 1) / vv.column);
+        let curColumn = ((nodeId + 1) % vv.column) ? (nodeId + 1) % vv.column : vv.column;
 
-    addAudio () {
-        cc.loader.loadRes("prefab/audio",cc.Prefab,function(err,audio){
-            if(!err) {
-                this.audio = cc.instantiate(audio);
-                this.node.addChild(this.audio);
-                
-            }
-        }.bind(this));
+        if(preRow != curRow && preColumn != curColumn) return false;
+        if(preRow === curRow && Math.abs(preColumn - curColumn) > 1) return false;
+        if(preColumn === curColumn && Math.abs(preRow - curRow) > 1) return false ;
+        
+        return true;
+    },
+
+    getNodeValue(nodeId) {
+        let node = vv.material[nodeId];
+        let nodeJs = this.getNodeJs(node);
+        return nodeJs.value;
     },
 
     touchStarCall(event) {
@@ -297,44 +310,54 @@ cc.Class({
         let curNodeRoadId = this.mark[curNodeId][length - 1];
 
         let roadArrLength = this.roadArr[this.roadLine].length;
-        let preId = this.roadArr[this.roadLine][roadArrLength - 1];
-        if(preId === curNodeId) return;
+        let preNodeId = this.roadArr[this.roadLine][roadArrLength - 1];
+        if(preNodeId === curNodeId) return;
+
+        //判断是否为恢复操作。
+        //反向回退：（同线）
+        if(this.roadLine === curNodeRoadId) {
+            let preIdx = this.roadArr[this.roadLine].indexOf(preNodeId);
+            let curIdx = this.roadArr[this.roadLine].indexOf(curNodeId);
+            if(preIdx === curIdx + 1) {
+                this.resumePreState(preNodeId);
+                return;
+            }
+        } 
+
+        //正向回退：（恢复同线,同线被截取掉的部分）
+        let curNodeJs = this.getNodeJs(curNode);
+        let isNext = this.isNextOfNode(preNodeId,curNodeId);
+        if(isNext && !curNodeJs.isClick){
+            let curNodeHasPreRoad = this.preRoadArr[curNodeId] && this.preRoadArr[curNodeId].length;
+            if(curNodeHasPreRoad) {
+                let pLength = this.preRoadArr[curNodeId].length;
+                let preLastNodeId = this.preRoadArr[curNodeId][pLength - 1];
+                let preFirstNodeId = this.preRoadArr[curNodeId][1];
+                if(preLastNodeId === curNodeId && preFirstNodeId == preNodeId) {
+                    this.resumePreState(curNodeId);
+                    return;
+                }
+    
+            }
+        }
 
        //同一条线上的删除操作。
         if(this.roadLine === curNodeRoadId) {
-            this.updateRoadCooState(curNodeRoadId,curNodeId);
+            this.deleteRoadCooState(curNodeRoadId,preNodeId,curNodeId);
             return;
         }
 
         if(typeId >= 10) return;
 
-        let preRow = Math.ceil((preId + 1) / vv.column);
-        let preColumn = ((preId + 1) % vv.column) ? (preId + 1) % vv.column : vv.column;
-        let curRow = Math.ceil((curNodeId + 1) / vv.column);
-        let curColumn = ((curNodeId + 1) % vv.column) ? (curNodeId + 1) % vv.column : vv.column;
-
-        //同一条线上的恢复判断。
-        let curNodeJs = this.getNodeJs(curNode);
-        let rlength = this.roadArr[this.roadLine].length;
-        let curRoadLastCookieId = this.roadArr[this.roadLine][rlength - 1];
-        let hasPreRoad = this.preRoadArr[curRoadLastCookieId] && this.preRoadArr[curRoadLastCookieId].length;
-        if(!curNodeJs.isClick && hasPreRoad) {
-            let plength = this.preRoadArr[curRoadLastCookieId].length;
-            let preRoadId = this.preRoadArr[curRoadLastCookieId][0];
-            let preRoadLastCookieId = this.preRoadArr[curRoadLastCookieId][plength - 1];
-            if(preRoadId === this.roadLine && preRoadLastCookieId === curNodeId) {
-                this.resumeRoadCooState(preRoadId,curRoadLastCookieId);
-                return;
-            }
+        //正向添加操作。
+        if(!isNext) return;
+        let preNodeValue = this.getNodeValue(preNodeId);
+        let curNodeValue = this.getNodeValue(curNodeId);
+        if(preNodeValue >= 10 || preNodeValue <= curNodeValue) {
+            this.updateCookieState(this.roadLine,curNodeId);
         }
-cc.log(curRow,curColumn);
-        if(preRow != curRow && preColumn != curColumn) return;
-        if(preRow === curRow && Math.abs(preColumn - curColumn) > 1) return;
-        if(preColumn === curColumn && Math.abs(preRow - curRow) > 1) return;
-        this.updateCookieState(this.roadLine,curNodeId);
-
-
     },
+
     touchEndCall(event) {
         this.roadLine = -1;
         this.preRoadArr.length = 0;
@@ -354,6 +377,20 @@ cc.log(curRow,curColumn);
         this.mapView.on("touchstart",this.touchStarCall ,this)
         this.mapView.on("touchmove",this.touchMoveCall ,this)
         this.mapView.on("touchend",this.touchEndCall ,this)
+        cc.systemEvent.on("Game:MonsterArrive",this.eatCookie,this);
+        cc.systemEvent.on("Game:MonsterEnd",this.disPlay,this);
+    },
+
+    offEventHandlers() {
+        this.mapView.off("touchstart",this.touchStarCall ,this)
+        this.mapView.off("touchmove",this.touchMoveCall ,this)
+        this.mapView.off("touchend",this.touchEndCall ,this)
+    },
+
+    onEventHandlers() {
+        this.mapView.on("touchstart",this.touchStarCall ,this)
+        this.mapView.on("touchmove",this.touchMoveCall ,this)
+        this.mapView.on("touchend",this.touchEndCall ,this)
     },
 
     nextButtonCallback() {
@@ -361,16 +398,89 @@ cc.log(curRow,curColumn);
         cc.director.loadScene("game");
     },
 
+    backSelectPageCallback() {
+        cc.director.loadScene("select");
+    },
    
     start () {
         this.resultWnd.active = false;
         this.backGround.active = false;
         this.initEventHandlers();
+    },
 
-        
+
+    eatCookie(event) {
+        let nodeId = event.detail;
+        let nodeJs = this.getNodeJs(nodeId);
+        nodeJs.eatCookieAnimation();
+    },
+
+    disPlay() {
+        this.overCount++;
+        if(this.overCount === this.roadNode.length) {
+            this.audioJs.pauseEatMusic();
+            this.audioJs.playSuccessMusic();
+            this.resultWnd.active = true;
+            this.backGround.active = true;
+            this.hint.interactable = false;
+            this.reset.interactable = false;
+        }
+    },
+
+    gameOver () {
+        this.audioJs.playEatMusic();
+        for(let i=0; i<this.roadNode.length; i++) {
+            let monsterId = this.roadNode[i];
+            let monsterJs = this.getNodeJs(monsterId);
+            let roadId = vv.matTypeOfNum[monsterId];
+            monsterJs.setRoad(this.roadArr[roadId]);
+        }
+    },
+    
+    resetMaterialInitState() {
+        this.audioJs.pauseEatMusic();
+        for(let i=0; i<this.roadNode.length; i++) {
+            let monsterIdx = this.roadNode[i];
+            let roadId = vv.matTypeOfNum[monsterIdx];
+            let road = this.roadArr[roadId];
+            for(let j=1; j<road.length;) {
+                let nodeId = road[j];
+                this.deleteNodeFromRoad(nodeId);
+                this.addNodeToRoad(-1,nodeId);
+            }
+        }
+    },
+
+    resetGame() {
+        if(this.isEat) {
+            for(let i=0; i<this.roadNode.length; i++) {
+                let monsterId = this.roadNode[i];
+                let monsterJs = this.getNodeJs(monsterId);
+                monsterJs.resetMove();
+                let roadId = vv.matTypeOfNum[monsterId];
+                let road = this.roadArr[roadId];
+                for(let i=1; i<road.length; i++) {
+                    let nodeId = road[i];
+                    let nodeJs = this.getNodeJs(nodeId);
+                    nodeJs.resetCookie();
+                }
+            }
+        } 
+        this.resetMaterialInitState();
+        this.onEventHandlers();
+        this.isEat = false;
     },
 
      update (dt) {
-
+        this.time += dt;
+        if(this.time >= 1 && !this.isEat) {
+            if(this.allCookieCount === this.roadCookieCount) {
+                this.offEventHandlers();
+                this.gameOver();
+                this.isEat = true;
+                return;
+            }
+            this.time = 0;
+        }
      },
 });

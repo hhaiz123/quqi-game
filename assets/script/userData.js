@@ -25,13 +25,18 @@ cc.Class({
         vv.monsterJs = require("MonsterHelp");
         vv.cookieJs = require("cookieHelp");
 
-        // window.Global = {}
-        // window.Global.passNum = 98;
-        // window.Global.selectLevel = -1;
+        let level = cc.sys.localStorage.getItem('level')
+        if (!vv.level) {
+            vv.level = 1
+            cc.sys.localStorage.setItem('level',1)
+        } else {
+            vv.level = parstInt(level);
+        }
+
      },
 
     start () {
-
+        cc.log("userdata start");
     },
 
     // update (dt) {},

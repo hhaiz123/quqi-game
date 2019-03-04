@@ -7,7 +7,21 @@ cc.Class({
             default: [],
             type : cc.AudioClip
         },
-        monsterVolumn : 0.1
+        backMusic : {
+            default:null,
+            type : cc.AudioClip
+        },
+        eatMusic : {
+            default:null,
+            type: cc.AudioClip
+        },
+        successMusic: {
+            default: null,
+            type: cc.AudioClip
+        },
+        monsterVolumn : 1,
+        backMusicVolumn : 0.1,
+        eatMusicVolumn : 0.5
     },
 
     getRandom(min,max) {
@@ -23,9 +37,32 @@ cc.Class({
         cc.audioEngine.play(this.monsterSelect[idx],false,this.monsterVolumn);
     },
 
+    playBackMusic() {
+        if(!vv.bgFlag) {
+            cc.audioEngine.play(this.backMusic,true,0.1);
+            vv.bgFlag = true;
+        }
+    },
+
+    playEatMusic() {
+        this.eatAudioId = cc.audioEngine.play(this.eatMusic,true,this.eatMusicVolumn);
+    },
+    
+    pauseEatMusic() {
+        if(this.eatAudioId) {
+            cc.audioEngine.stop(this.eatAudioId);
+        }
+    },
+
+    playSuccessMusic() {
+        cc.audioEngine.play(this.successMusic,false,1);
+    },
     // onLoad () {},
 
     start () {
+        if(vv.bgFlag === undefined) {
+            vv.bgFlag = false;
+        }
 
     },
 

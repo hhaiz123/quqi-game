@@ -69,13 +69,13 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 16
-      },
-      {
         "__id__": 17
       },
       {
         "__id__": 18
+      },
+      {
+        "__id__": 19
       }
     ],
     "_prefab": null,
@@ -288,9 +288,9 @@
     "_enabled": true,
     "alignMode": 1,
     "_target": null,
-    "_alignFlags": 1,
-    "_left": 0,
-    "_right": 0,
+    "_alignFlags": 41,
+    "_left": 87,
+    "_right": 87,
     "_top": 74,
     "_bottom": 0,
     "_verticalCenter": 0,
@@ -301,7 +301,7 @@
     "_isAbsBottom": true,
     "_isAbsHorizontalCenter": true,
     "_isAbsVerticalCenter": true,
-    "_originalWidth": 0,
+    "_originalWidth": 576,
     "_originalHeight": 0
   },
   {
@@ -321,7 +321,11 @@
     ],
     "_tag": -1,
     "_active": true,
-    "_components": [],
+    "_components": [
+      {
+        "__id__": 16
+      }
+    ],
     "_prefab": null,
     "_id": "15ELqGWxhJW5MMOhyJz6md",
     "_opacity": 255,
@@ -615,6 +619,32 @@
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
     "_N$overflow": 0
+  },
+  {
+    "__type__": "cc.Widget",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 8
+    },
+    "_enabled": true,
+    "alignMode": 1,
+    "_target": null,
+    "_alignFlags": 44,
+    "_left": 375,
+    "_right": 375,
+    "_top": 0,
+    "_bottom": 667,
+    "_verticalCenter": 0,
+    "_horizontalCenter": 0,
+    "_isAbsLeft": true,
+    "_isAbsRight": true,
+    "_isAbsTop": true,
+    "_isAbsBottom": true,
+    "_isAbsHorizontalCenter": true,
+    "_isAbsVerticalCenter": true,
+    "_originalWidth": 0,
+    "_originalHeight": 0
   },
   {
     "__type__": "cc.Canvas",
